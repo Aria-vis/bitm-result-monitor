@@ -18,21 +18,12 @@ with sync_playwright() as p:
 
     print("\nERP login page loaded.")
 
-    inputs = erp_page.locator("input")
+    # Fill dummy values
+    erp_page.fill("#j_username", "test_user")
+    erp_page.fill("#password-1", "test_password")
 
-    count = inputs.count()
+    print("\nDummy credentials filled successfully.")
 
-    print(f"\nFound {count} input fields:\n")
-
-    for i in range(count):
-        field = inputs.nth(i)
-
-        print(f"Field {i+1}:")
-        print("Type:", field.get_attribute("type"))
-        print("Name:", field.get_attribute("name"))
-        print("ID:", field.get_attribute("id"))
-        print("------------------------")
-
-    input("\nPress Enter to close browser...")
+    input("\nVerify fields visually, then press Enter to close browser...")
 
     browser.close()
