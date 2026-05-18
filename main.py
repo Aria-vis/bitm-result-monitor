@@ -164,9 +164,12 @@ while True:
         log("Monitoring stopped.")
 
         # Infinite alert loop
-        while True:
+        for _ in range(5):
             playsound(SOUND_FILE)
             time.sleep(1)
+
+        log("Program terminated after successful detection.")
+        break
 
     log(f"Waiting {CHECK_INTERVAL // 60} minutes before next check...")
 
