@@ -12,15 +12,26 @@ with sync_playwright() as p:
     print("BIT Mesra website opened.")
     print("Click ERP manually...")
 
-    # Wait for new ERP tab
     erp_page = context.wait_for_event("page")
-
-    print("\nERP tab detected.")
 
     erp_page.wait_for_load_state()
 
-    print("\nERP URL:")
-    print(erp_page.url)
+    print("\nERP login page loaded.")
+
+    inputs = erp_page.locator("input")
+
+    count = inputs.count()
+
+    print(f"\nFound {count} input fields:\n")
+
+    for i in range(count):
+        field = inputs.nth(i)
+
+        print(f"Field {i+1}:")
+        print("Type:", field.get_attribute("type"))
+        print("Name:", field.get_attribute("name"))
+        print("ID:", field.get_attribute("id"))
+        print("------------------------")
 
     input("\nPress Enter to close browser...")
 
