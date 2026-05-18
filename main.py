@@ -1,5 +1,6 @@
 import os
 import time
+import requests
 
 from dotenv import load_dotenv
 from playsound import playsound
@@ -10,6 +11,8 @@ load_dotenv()
 
 USERNAME = os.getenv("ERP_USERNAME")
 PASSWORD = os.getenv("ERP_PASSWORD")
+BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 TARGET_RESULT = "SP2026"
 
@@ -17,6 +20,19 @@ CHECK_INTERVAL = 300  # 5 minutes
 
 SOUND_FILE = "assets/alert.mp3"
 
+def send_telegram_message(message):
+
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+
+    data = {
+        "chat_id": CHAT_ID,
+        "text": message
+    }
+
+    response = requests.post(url, data=data)
+
+    print("\nTelegram response:")
+    print(response.json())
 
 def check_result():
     with sync_playwright() as p:
@@ -61,6 +77,10 @@ def check_result():
             if TARGET_RESULT in page_text:
 
                 print(f"\n{TARGET_RESULT} RESULT FOUND!")
+
+                send_telegram_message(
+                    f"{TARGET_RESULT} result is now available on BIT Mesra ERP!"
+                )
 
                 # Play alert sound
                 playsound(SOUND_FILE)
