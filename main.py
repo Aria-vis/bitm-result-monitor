@@ -9,61 +9,51 @@ load_dotenv()
 USERNAME = os.getenv("ERP_USERNAME")
 PASSWORD = os.getenv("ERP_PASSWORD")
 
+TARGET_RESULT = "SP2026"
+
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=False)
 
-    context = browser.new_context()
+    page = browser.new_page()
 
-    page = context.new_page()
+    # Open ERP directly
+    page.goto("https://erpportal.bitmesra.ac.in")
 
-    page.goto("https://www.bitmesra.ac.in/")
+    print("ERP opened.")
 
-    print("BIT Mesra website opened.")
-    print("Click ERP manually...")
+    # Fill login
+    page.fill("#j_username", USERNAME)
+    page.fill("#password-1", PASSWORD)
 
-    erp_page = context.wait_for_event("page")
-
-    erp_page.wait_for_load_state()
-
-    print("\nERP login page loaded.")
-
-    # Login
-    erp_page.fill("#j_username", USERNAME)
-    erp_page.fill("#password-1", PASSWORD)
-
-    erp_page.get_by_role("button", name="Login").click()
+    page.get_by_role("button", name="Login").click()
 
     print("Login submitted.")
 
-    # Wait for dashboard
-    erp_page.wait_for_load_state()
+    page.wait_for_timeout(3000)
 
-    # Small stabilization delay
-    erp_page.wait_for_timeout(3000)
+    # Navigate menus
+    page.get_by_text("Academic Functions").click()
 
-    print("Dashboard loaded.")
+    page.wait_for_timeout(1000)
 
-    # Open Academic Functions
-    erp_page.get_by_text("Academic Functions").click()
+    page.get_by_text("University Exam/Result").click()
 
-    print("Academic Functions opened.")
+    page.wait_for_timeout(1000)
 
-    erp_page.wait_for_timeout(1000)
+    page.get_by_text("Autonomous Student Result").click()
 
-    # Open University Exam/Result
-    erp_page.get_by_text("University Exam/Result").click()
+    print("Result page opened.")
 
-    print("University Exam/Result opened.")
+    page.wait_for_timeout(3000)
 
-    erp_page.wait_for_timeout(1000)
+    # Read page content
+    page_text = page.inner_text("body")
 
-    # Open Autonomous Student Result
-    erp_page.get_by_text("Autonomous Student Result").click()
+    if TARGET_RESULT in page_text:
+        print(f"\n{TARGET_RESULT} RESULT FOUND!")
+    else:
+        print(f"\n{TARGET_RESULT} not available yet.")
 
-    print("Autonomous Student Result clicked.")
-
-    erp_page.wait_for_timeout(10000)
-
-    input("\nObserve result page, then press Enter to close browser...")
+    input("\nPress Enter to close browser...")
 
     browser.close()
