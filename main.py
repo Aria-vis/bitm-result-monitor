@@ -2,23 +2,44 @@ import os
 import time
 import requests
 
+from datetime import datetime
+
 from dotenv import load_dotenv
 from playsound import playsound
 from playwright.sync_api import sync_playwright
 
-# Load environment variables
+
+# =========================
+# Logging Helper
+# =========================
+
+def log(message):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] {message}")
+
+
+# =========================
+# Load Environment Variables
+# =========================
+
 load_dotenv()
 
 USERNAME = os.getenv("ERP_USERNAME")
 PASSWORD = os.getenv("ERP_PASSWORD")
+
 BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
-TARGET_RESULT = "SP2026"
+TARGET_RESULT = os.getenv("TARGET_RESULT", "SP2026")
 
 CHECK_INTERVAL = 300  # 5 minutes
 
 SOUND_FILE = "assets/alert.mp3"
+
+
+# =========================
+# Telegram Notification
+# =========================
 
 def send_telegram_message(message):
 
@@ -29,12 +50,26 @@ def send_telegram_message(message):
         "text": message
     }
 
-    response = requests.post(url, data=data)
+    try:
+        response = requests.post(url, data=data)
 
-    print("\nTelegram response:")
-    print(response.json())
+        result = response.json()
+
+        log(f"Telegram response: {result}")
+
+        return result.get("ok", False)
+
+    except Exception as e:
+        log(f"Telegram error: {e}")
+        return False
+
+
+# =========================
+# Result Checking Logic
+# =========================
 
 def check_result():
+
     with sync_playwright() as p:
 
         browser = p.chromium.launch(headless=True)
@@ -42,9 +77,13 @@ def check_result():
         page = browser.new_page()
 
         try:
-            print("\nOpening ERP portal...")
 
-            page.goto("https://erpportal.bitmesra.ac.in", timeout=60000)
+            log("Opening ERP portal...")
+
+            page.goto(
+                "https://erpportal.bitmesra.ac.in",
+                timeout=60000
+            )
 
             # Login
             page.fill("#j_username", USERNAME)
@@ -52,7 +91,7 @@ def check_result():
 
             page.get_by_role("button", name="Login").click()
 
-            print("Login successful.")
+            log("Login successful.")
 
             page.wait_for_timeout(3000)
 
@@ -67,52 +106,68 @@ def check_result():
 
             page.get_by_text("Autonomous Student Result").click()
 
-            print("Reached result page.")
+            log("Reached result page.")
 
             page.wait_for_timeout(3000)
 
             # Read page content
             page_text = page.inner_text("body")
 
+            # Result Found
             if TARGET_RESULT in page_text:
 
-                print(f"\n{TARGET_RESULT} RESULT FOUND!")
+                log(f"{TARGET_RESULT} RESULT FOUND!")
 
-                send_telegram_message(
+                # Screenshot capture
+                page.screenshot(path="result_found.png")
+
+                telegram_sent = send_telegram_message(
                     f"{TARGET_RESULT} result is now available on BIT Mesra ERP!"
                 )
 
-                # Play alert sound
-                playsound(SOUND_FILE)
+                if telegram_sent:
+                    log("Telegram notification sent successfully.")
+                else:
+                    log("Telegram notification failed.")
 
                 browser.close()
 
                 return True
 
             else:
-                print(f"\n{TARGET_RESULT} not available yet.")
+                log(f"{TARGET_RESULT} not available yet.")
 
         except Exception as e:
 
-            print("\nError occurred:")
-            print(e)
+            log(f"Error occurred: {e}")
 
-            print("\nWill retry after 5 minutes...")
+            log("Will retry after 5 minutes...")
 
-        browser.close()
+        finally:
+            browser.close()
 
         return False
 
 
-# Monitoring loop
+# =========================
+# Monitoring Loop
+# =========================
+
+log("BIT Mesra ERP Result Monitor Started.")
+
 while True:
 
     found = check_result()
 
     if found:
-        print("\nMonitoring stopped.")
-        break
 
-    print(f"\nWaiting {CHECK_INTERVAL // 60} minutes before next check...\n")
+        log("Monitoring stopped.")
+
+        # Infinite alert loop
+        while True:
+            playsound(SOUND_FILE)
+            time.sleep(1)
+
+    log(f"Waiting {CHECK_INTERVAL // 60} minutes before next check...")
 
     time.sleep(CHECK_INTERVAL)
