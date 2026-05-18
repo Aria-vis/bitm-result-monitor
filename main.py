@@ -1,4 +1,13 @@
+import os
+
+from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
+
+# Load .env variables
+load_dotenv()
+
+USERNAME = os.getenv("ERP_USERNAME")
+PASSWORD = os.getenv("ERP_PASSWORD")
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=False)
@@ -18,12 +27,12 @@ with sync_playwright() as p:
 
     print("\nERP login page loaded.")
 
-    # Fill dummy values
-    erp_page.fill("#j_username", "test_user")
-    erp_page.fill("#password-1", "test_password")
+    # Fill REAL credentials securely
+    erp_page.fill("#j_username", USERNAME)
+    erp_page.fill("#password-1", PASSWORD)
 
-    print("\nDummy credentials filled successfully.")
+    print("\nCredentials loaded from .env successfully.")
 
-    input("\nVerify fields visually, then press Enter to close browser...")
+    input("\nVerify visually, then press Enter to close browser...")
 
     browser.close()
