@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright
 
-# Load .env variables
+# Load environment variables
 load_dotenv()
 
 USERNAME = os.getenv("ERP_USERNAME")
@@ -27,12 +27,18 @@ with sync_playwright() as p:
 
     print("\nERP login page loaded.")
 
-    # Fill REAL credentials securely
+    # Fill credentials
     erp_page.fill("#j_username", USERNAME)
     erp_page.fill("#password-1", PASSWORD)
 
-    print("\nCredentials loaded from .env successfully.")
+    print("Credentials filled.")
 
-    input("\nVerify visually, then press Enter to close browser...")
+    # Click login button
+    erp_page.get_by_role("button", name="Login").click()
 
-    browser.close()
+    print("Login button clicked.")
+
+    # Wait 10 seconds
+    erp_page.wait_for_timeout(10000)
+
+    input("\nObserve what happens, then press Enter to close browser...")
